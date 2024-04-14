@@ -7,6 +7,10 @@
 # If docker-compose IS in your PATH, leave this line as is.
 dc := "docker-compose"
 
+# If changing the `myadmin` username or `sandbox` database these need to be updated
+user := "myadmin"
+database := "sandbox"
+
 # Start the postgres server
 start:
   {{ dc }} up -d
@@ -22,7 +26,7 @@ restart:
 # Connect to the postgres server
 # No auth needed since you're connecting as if from inside the docker container
 connect:
-  {{ dc }} exec postgres psql -U myadmin
+  {{ dc }} exec postgres psql -U {{ user }} -d {{ database }}
 
 # DELETES ALL DATA 
 hard-reset:
