@@ -34,7 +34,7 @@ hard-reset:
 
 # Wait for the postgres server to be ready
 wait-for-db:
-  DATABASE_URL=$(source .env && echo $DATABASE_URL) && ./scripts/wait-for-db.sh
+  ./scripts/wait-for-db.sh
 
 # Run a test file
 # Providing a 2nd param that is anything other than "nuh uh" will run the test in interactive mode

@@ -17,6 +17,7 @@ User should be able to SELECT on the `sandbox_public.user_stuff` table.
   (1 row)
   
 
+
 User should be able to INSERT into the `sandbox_public.user_stuff` table.
 
   $ psql $DATABASE_URL -c "
@@ -26,6 +27,8 @@ User should be able to INSERT into the `sandbox_public.user_stuff` table.
   > "
   SET
   INSERT 0 1
+
+
 
 User should be able to UPDATE the `sandbox_public.user_stuff` table.
   $ psql $DATABASE_URL -c "

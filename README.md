@@ -113,6 +113,180 @@ DATABASE_URL=$(source .env && echo $DATABASE_URL) cram tests/001-first-test/001-
 
 Which is fine for 1 or 2 env vars, but beyond that something else will be needed (not sure if that'll be an issue in this case).
 
+## Running
+
+Methods of running tests
+
+### Individual test
+
+Run an individual test using the filename from the `tests` folder with `just test restricted-user-access-expectations`:
+
+```
+% just test restricted-user-access-expectations
+docker-compose down -v
+WARN[0000] /Users/paulbrunner/github-trite/postgres-intro/docker-compose.yml: `version` is obsolete
+[+] Running 3/1
+ ✔ Container postgres-intro-postgres-1  Removed                                                                         0.1s
+ ✔ Volume postgres-intro_postgres-data  Removed                                                                         0.0s
+ ✔ Network postgres-intro_default       Removed                                                                         0.1s
+docker-compose up -d
+WARN[0000] /Users/paulbrunner/github-trite/postgres-intro/docker-compose.yml: `version` is obsolete
+[+] Running 3/3
+ ✔ Network postgres-intro_default         Created                                                                       0.0s
+ ✔ Volume "postgres-intro_postgres-data"  Created                                                                       0.0s
+ ✔ Container postgres-intro-postgres-1    Started                                                                       0.1s
+DATABASE_URL=$(source .env && echo $DATABASE_URL) && ./scripts/wait-for-db.sh
+Waiting for database to become available...
+Database is now available!
+cram tests/restricted-user-access-expectations.t
+.
+# Ran 1 tests, 0 skipped, 0 failed.
+```
+
+### Individual test in interactive mode
+
+Run an individual test in interactive mode by supplying anything as a 2nd param (other than "nuh uh"). Ex: `just test powerful-user-access-expectations x`
+
+This is particularly useful for getting the output of a command captured correctly. Don't bother trying to copy and paste from the shell when you can just enter the command into the `.t` file and save the output if it is correct. This means you see diffs that are easy to read, since they only show additions, and not additions and subtractions.
+
+Additions and subtractions:
+
+```
+% just test powerful-user-access-expectations x
+
+ ... restarting docker containers removed ...
+
+cram tests/powerful-user-access-expectations.t -i
+!
+--- tests/powerful-user-access-expectations.t
++++ tests/powerful-user-access-expectations.t.err
+@@ -10,9 +10,13 @@
+   > FROM sandbox_public.user_stuff
+   > LIMIT 1;
+   > "
++  SET
++   ?column?
++  ----------
++   it works
++  (1 row)
++
+
+-  INSERT 0 1
+-
+
+ User should be able to INSERT into the `sandbox_public.user_stuff` table.
+
+@@ -21,11 +25,9 @@
+   >
+   > INSERT INTO sandbox_public.user_stuff (first_name, last_name) VALUES ('John', 'Doe')
+   > "
++  SET
++  INSERT 0 1
+
+-   ?column?
+-  ----------
+-   it works
+-  (1 row)
+
+
+ User should be able to UPDATE the `sandbox_public.user_stuff` table.
+@@ -34,10 +36,8 @@
+   >
+   > UPDATE sandbox_public.user_stuff SET first_name = 'Jane' WHERE id = 1
+   > "
+-   ?column?
+-  ----------
+-   it works
+-  (1 row)
++  SET
++  UPDATE 1
+
+ User should be able to SELECT on the `sandbox_public.non_critical_stuff` table.
+ This just selects a string if it works, but will error if not.
+Accept this change? [yN] y
+patching file tests/powerful-user-access-expectations.t
+
+# Ran 1 tests, 0 skipped, 1 failed.
+error: Recipe `test` failed on line 42 with exit code 1
+```
+
+By just adding the commands you can very easily see what is going to happen:
+
+```
+cram tests/powerful-user-access-expectations.t -i
+!
+--- tests/powerful-user-access-expectations.t
++++ tests/powerful-user-access-expectations.t.err
+@@ -10,6 +10,9 @@
+   > FROM sandbox_public.user_stuff
+   > LIMIT 1;
+   > "
++  psql: error: connection to server on socket "/tmp/.s.PGSQL.5432" failed: No such file or directory
++  \tIs the server running locally and accepting connections on that socket? (esc)
++  [2]
+```
+
+And then accept when the output is what you know it should be:
+
+```
+cram tests/powerful-user-access-expectations.t -i
+!
+--- tests/powerful-user-access-expectations.t
++++ tests/powerful-user-access-expectations.t.err
+@@ -10,6 +10,12 @@
+   > FROM sandbox_public.user_stuff
+   > LIMIT 1;
+   > "
++  SET
++   ?column?
++  ----------
++   it works
++  (1 row)
++
+```
+
+### All tests
+
+Run all tests with `just test-all`:
+
+```
+% just test-all
+./scripts/run-all-tests.sh
+.
+# Ran 1 tests, 0 skipped, 0 failed.
+.
+# Ran 1 tests, 0 skipped, 0 failed.
+```
+
+### Rebuild db and then run all tests
+
+With `just test-all x`
+
+```
+% just test-all x
+just hard-reset start wait-for-db
+docker-compose down -v
+WARN[0000] /Users/paulbrunner/github-trite/postgres-intro/docker-compose.yml: `version` is obsolete
+[+] Running 3/1
+ ✔ Container postgres-intro-postgres-1  Removed                                                        0.1s
+ ✔ Volume postgres-intro_postgres-data  Removed                                                        0.0s
+ ✔ Network postgres-intro_default       Removed                                                        0.0s
+docker-compose up -d
+WARN[0000] /Users/paulbrunner/github-trite/postgres-intro/docker-compose.yml: `version` is obsolete
+[+] Running 3/3
+ ✔ Network postgres-intro_default         Created                                                      0.0s
+ ✔ Volume "postgres-intro_postgres-data"  Created                                                      0.0s
+ ✔ Container postgres-intro-postgres-1    Started                                                      0.1s
+./scripts/wait-for-db.sh
+Waiting for database to become available...
+Database is now available!
+./scripts/run-all-tests.sh
+.
+# Ran 1 tests, 0 skipped, 0 failed.
+.
+# Ran 1 tests, 0 skipped, 0 failed.
+```
+
 ## Creating new tests
 
 - Create a new test by making a `.t` file with the commands to run.
